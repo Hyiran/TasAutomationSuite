@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE project [
+]>
+
+<project name="S4" default="run" basedir=".">  
+
+<!-- ========== Initialize Properties =================================== -->
+    <property environment="env"/>
+    <property file="build.properties"/>
+    <property name="ws.home" value="C:/selenium/testws"/>
+    <property name="test.dest" value="${ws.home}/bin"/>
+    <property name="test.src" value="${ws.home}/src"/>
+
+    <target name="start-selenium-server">
+        <java jar="${ws.home}/lib/selenium-server-2.0a2.jar">
+        	<vararg value="Dhttp.proxyHost=moon.wipro.com"/>
+        		<vararg value="Dhttp.proxyPort=8080"/>
+        			<vararg value="Dhttp.proxyUser=venmaum"/>
+        	<vararg value="Dhttp.proxyPassword=bkv@WL123"/>
+        	<vararg value="-multiWindow=true"/>
+        	<vararg value="-userJsInjection ${Js.File}"/>
+
+    	</java>
+    </target>
+
+    <target name="setClassPath" unless="test.classpath">
+        <path id="classpath_jars">
+            <fileset dir="${ws.home}/lib" includes="*.jar"/>
+        </path>
+        <pathconvert pathsep=";" 
+            property="test.classpath" 
+            refid="classpath_jars"/>
+    </target>
+
+    <target name="init" depends="setClassPath">
+        <tstamp>
+            <format property="start.time" pattern="MM/dd/yyyy hh:mm aa" />
+        </tstamp>
+        <condition property="ANT" 
+            value="${env.ANT_HOME}/bin/ant.bat" 
+            else="${env.ANT_HOME}/bin/ant">
+                    <os family="windows" />
+        </condition>
+    	<taskdef resource="testngtasks" classpath="${test.classpath}/testng.jar"/>
+    </target>
+  
+    <!-- all -->
+    <target name="all">
+    </target>
+
+    <!-- clean -->
+    <target name="clean">
+        <delete dir="${test.dest}"/>
+    </target>
+
+    <!-- compile -->
+    <target name="compile" depends="init, clean" > 
+		<delete includeemptydirs="true" quiet="true">
+            <fileset dir="${test.dest}" includes="**/*"/>
+		</delete>
+        <echo message="making directory..."/>
+		<mkdir dir="${test.dest}"/>
+        <echo message="classpath: ${test.classpath}"/>
+        <echo message="compiling..."/>
+        <javac 
+            debug="true" 
+            destdir="${test.dest}" 
+            srcdir="${test.src}" 
+            target="1.5" 
+            classpath="${test.classpath}"
+        >
+        </javac>
+      </target>
+	
+	<target name="buildJar" depends="compile">
+		<jar destfile="${test.dest}/tas.jar" basedir="${test.dest}"/>
+	</target>
+	
+    <!-- build -->
+    <!-- run -->
+	  
+
+    <target name="run" depends="buildJar">
+		 
+	<!--on building for jar file please remove the below testng attributes-->
+    	<testng outputDir="${test.dest}" sourcedir="${test.src}" haltOnfailure="true" >
+    		<xmlfileset dir="${ws.home}" includes="temp-testng-customsuite.xml" excludes="${test.dest}/com/tej/Automation_TestSuite/AutomationTestSuite.class"/>
+    		<classpath>
+    		                               <pathelement path="${test.dest}"/>
+    		                               <pathelement path="${test.classpath}"/>
+    		                               <pathelement location="${test.dest}"/>
+    		</classpath>
+    		<classfileset dir="${test.dest}" includes="**/*.class" excludesfile="${test.dest}/com/tej/Automation_TestSuite/AutomationTestSuite.class"/>  
+    	</testng>
+    	<path id="run.classpasth">
+    		<fileset dir="${ws.home}/lib" includes="*.jar"/>
+    		<fileset dir="${ws.home}/bin" includes="*.jar"/>
+    	</path>
+    	
+    </target>
+
+    <target name="usage">
+        <echo>
+            ant run will execute the test
+        </echo>
+    </target>
+	<target name="stop-server">
+	        <get taskname="selenium-shutdown"
+	            src="http://localhost:4444/selenium-server/driver/?cmd=shutDownSeleniumServer"
+	            dest="result.txt" ignoreerrors="true" />
+	        <echo taskname="selenium-shutdown" message="DGF Errors during shutdown are expected" />
+	</target>
+	 
+
+    <!-- ****************** targets not used ****************** -->
+	
+
+</project>
